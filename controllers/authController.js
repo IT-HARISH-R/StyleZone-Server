@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import { sendMail } from "../middlewares/emailService.js";
+import { SECRET_KEY } from "../utils/config.js";
 // import { sendOTP as sendWhatsAppOTP, verifyOTP as checkOTP } from "../utils/otpHelper.js";
 
 // Signup
@@ -71,13 +72,28 @@ export const login = async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(401).json({ message: "Invalid password" });
 
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+        const token = jwt.sign({ id: user._id }, SECRET_KEY, { expiresIn: "1d" });
         res.json({ message: "Login successful", token });
     } catch (err) {
         res.status(500).json({ message: "Login failed", error: err.message });
     }
 };
 
+export const me = async (request, response) => {
+    try {
+        const userid = request.userId
+        const user = await User.findById(userid);
+        // console.log(user)
+        if (!user) {
+            return response.status(404).json({ message: "user not found" });
+        }
+
+        response.json({ user })
+    }
+    catch (error) {
+        response.status(500).json({ message: error.message });
+    }
+}
 
 // Forgot Password (send OTP)
 export const forgotPassword = async (request, response) => {
@@ -132,21 +148,6 @@ export const resetPassword = async (request, response) => {
     }
 };
 
-export const me = async (request, response) => {
-    try {
-        const userid = request.userId
-        const user = await User.findById(userid);
-        console.log(user)
-        if (!user) {
-            return response.status(404).json({ message: "user not found" });
-        }
-
-        response.json({ user })
-    }
-    catch (error) {
-        response.status(500).json({ message: error.message });
-    }
-}
 
 // import bcrypt from "bcryptjs";
 // import User from "../models/User.js";
